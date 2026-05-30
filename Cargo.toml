@@ -1,0 +1,15 @@
+[package]
+name = "kram"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+kube = { version = "3.1.0", features = ["runtime", "derive"] }
+k8s-openapi = { version = "0.27.0", features = ["latest", "schemars"] }
+schemars = { version = "1" }
+serde = {version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+comfy-table = "7.2.2"
