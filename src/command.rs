@@ -8,7 +8,6 @@ pub enum SortOrder {
 
 #[derive(Debug, Clone, ValueEnum)]
 pub enum SortBy {
-    Resource,
     Min,
     Max,
     Mean,
@@ -33,7 +32,7 @@ pub struct Cli {
     #[arg(long = "sort-order", default_value = "desc")]
     pub sort_order: SortOrder,
 
-    /// Sort output by a specific column (e.g., "resource", "min", "max", "mean", "p95", "count", "sum"). Default is "sum"
+    /// Sort output by a specific column (e.g., "min", "max", "mean", "p95", "count", "sum"). Default is "sum"
     #[arg(long = "sort-by", default_value = "sum")]
     pub sort_by: SortBy,
 
