@@ -19,6 +19,16 @@ pub struct ResourceUsage {
     pub memory: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Statistics {
+    pub min: u64,
+    pub max: u64,
+    pub mean: f64,
+    pub p95: u64,
+    pub count: usize,
+    pub sum: u64,
+}
+
 pub fn parse_memory_bytes(s: &str) -> u64 {
     if let Some(n) = s.strip_suffix("Ki") {
         return n.parse::<u64>().unwrap_or(0) * 1024;

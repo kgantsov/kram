@@ -1,11 +1,19 @@
 use comfy_table::Table;
 use std::collections::HashMap;
 
+use crate::command::{SortBy, SortOrder};
 use crate::kubernetes::{get_metrics, get_pods, resolve_pod_owner};
-use crate::metrics::{PodMetrics, calculate_stats, memory_bytes_to_human, parse_memory_bytes};
+use crate::metrics::{
+    PodMetrics, Statistics, calculate_stats, memory_bytes_to_human, parse_memory_bytes,
+};
 use kube::Client;
 
-pub async fn run(namespace: Option<String>, selector: Vec<String>) -> anyhow::Result<()> {
+pub async fn run(
+    namespace: Option<String>,
+    selector: Vec<String>,
+    sort_order: SortOrder,
+    sort_by: SortBy,
+) -> anyhow::Result<()> {
     let client = Client::try_default().await?;
     let pods = get_pods(client.clone(), namespace.clone(), selector).await?;
 
@@ -38,30 +46,52 @@ pub async fn run(namespace: Option<String>, selector: Vec<String>) -> anyhow::Re
                 .push(memory_bytes);
         }
     }
+    let mut mem_usage_values: Vec<u64> = Vec::new();
+    let mut owner_stats: HashMap<String, Statistics> = HashMap::new();
+    for (owner, values) in &owner_metrics {
+        let (min, max, mean, p95, count, sum) = calculate_stats(values.clone());
+        owner_stats.insert(
+            owner.clone(),
+            Statistics {
+                min,
+                max,
+                mean,
+                p95,
+                count,
+                sum,
+            },
+        );
+        mem_usage_values.extend(values);
+    }
+
     let mut table = Table::new();
     table.set_header(vec![
         "Resource", "min", "max", "mean", "p95", "count", "sum",
     ]);
 
-    let mem_usage_values: Vec<u64> = owner_metrics
-        .values()
-        .flat_map(|v| v.iter().cloned())
-        .collect();
+    let mut sorted_stats: Vec<(String, Statistics)> = owner_stats.into_iter().collect();
+    sorted_stats.sort_by_key(|(_, stats)| match sort_by {
+        SortBy::Min => stats.min,
+        SortBy::Max => stats.max,
+        SortBy::Mean => stats.mean as u64,
+        SortBy::P95 => stats.p95,
+        SortBy::Count => stats.count as u64,
+        SortBy::Sum => stats.sum,
+        _ => stats.sum,
+    });
+    if matches!(sort_order, SortOrder::Desc) {
+        sorted_stats.reverse();
+    }
 
-    let mut sorted_metrics: Vec<(String, Vec<u64>)> = owner_metrics.into_iter().collect();
-    sorted_metrics.sort_by_key(|(_, values)| std::cmp::Reverse(values.iter().sum::<u64>()));
-
-    for (owner, values) in sorted_metrics {
-        let (min, max, mean, p95, count, sum) = calculate_stats(values);
-
+    for (owner, stats) in sorted_stats {
         table.add_row(vec![
             owner.clone(),
-            memory_bytes_to_human(min),
-            memory_bytes_to_human(max),
-            memory_bytes_to_human(mean as u64),
-            memory_bytes_to_human(p95),
-            count.to_string(),
-            memory_bytes_to_human(sum),
+            memory_bytes_to_human(stats.min),
+            memory_bytes_to_human(stats.max),
+            memory_bytes_to_human(stats.mean as u64),
+            memory_bytes_to_human(stats.p95),
+            stats.count.to_string(),
+            memory_bytes_to_human(stats.sum),
         ]);
     }
 
