@@ -77,7 +77,6 @@ pub async fn run(
         SortBy::P95 => stats.p95,
         SortBy::Count => stats.count as u64,
         SortBy::Sum => stats.sum,
-        _ => stats.sum,
     });
     if matches!(sort_order, SortOrder::Desc) {
         sorted_stats.reverse();
