@@ -14,10 +14,14 @@ A Kubernetes memory usage CLI. Queries pod metrics and prints aggregated statist
 kram [OPTIONS]
 
 Options:
-  -n, --namespace <NAMESPACE>  Namespace to query (default: all namespaces)
-  -s, --selector <SELECTOR>    Label selector (repeatable; see below)
-  -h, --help                   Print help
-  -V, --version                Print version
+  -n, --namespace <NAMESPACE>      Namespace to query (default: all namespaces)
+  -s, --selector <SELECTOR>        Label selector (repeatable; see below)
+      --sort-by <SORT_BY>          Column to sort by [default: sum]
+                                   [possible values: resource, min, max, mean, p95, count, sum]
+      --sort-order <SORT_ORDER>    Sort direction [default: desc]
+                                   [possible values: asc, desc]
+  -h, --help                       Print help
+  -V, --version                    Print version
 ```
 
 ### Examples
@@ -37,6 +41,12 @@ kram --selector app=nginx --selector app=redis
 
 # Combined: (app=nginx AND tier=web) OR (app=redis)
 kram --selector app=nginx,tier=web --selector app=redis
+
+# Sort by max memory, ascending
+kram --sort-by max --sort-order asc
+
+# Sort by p95, descending (default order)
+kram --sort-by p95
 ```
 
 ### Label selectors
@@ -64,7 +74,7 @@ kram --selector app=nginx,tier=web --selector app=redis
 +----------------------------------------------+--------+--------+--------+--------+-------+--------+
 ```
 
-Rows are sorted descending by total memory. The `Summary` row aggregates across all containers.
+Rows are sorted by `sum` descending by default. Use `--sort-by` to change the column and `--sort-order` to change direction. The `Summary` row aggregates across all containers.
 
 ## Build
 
