@@ -7,7 +7,7 @@ use kram::command::Cli;
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    run(cli.namespace).await?;
+    run(cli.namespace, cli.selector).await?;
 
     Ok(())
 }

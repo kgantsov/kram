@@ -5,9 +5,9 @@ use crate::kubernetes::{get_metrics, get_pods, resolve_pod_owner};
 use crate::metrics::{PodMetrics, calculate_stats, memory_bytes_to_human, parse_memory_bytes};
 use kube::Client;
 
-pub async fn run(namespace: Option<String>) -> anyhow::Result<()> {
+pub async fn run(namespace: Option<String>, selector: Vec<String>) -> anyhow::Result<()> {
     let client = Client::try_default().await?;
-    let pods = get_pods(client.clone(), namespace.clone()).await?;
+    let pods = get_pods(client.clone(), namespace.clone(), selector).await?;
 
     let mut owner_map: HashMap<String, String> = HashMap::new();
 
@@ -20,10 +20,14 @@ pub async fn run(namespace: Option<String>) -> anyhow::Result<()> {
 
     for metric in &metrics_list {
         let pod_name = metric.metadata.name.clone().unwrap_or_default();
-        let pod_owner = owner_map
-            .get(&pod_name)
-            .cloned()
-            .unwrap_or_else(|| format!("standalone/{}", pod_name));
+        let pod_owner = owner_map.get(&pod_name).cloned();
+
+        let pod_owner = match pod_owner {
+            Some(owner) => owner,
+            None => {
+                continue;
+            }
+        };
 
         let pod_metrics: PodMetrics = serde_json::from_value(serde_json::to_value(metric)?)?;
         for container in &pod_metrics.containers {

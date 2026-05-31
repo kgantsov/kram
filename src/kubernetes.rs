@@ -8,6 +8,7 @@ use kube::{Api, Client, api::ListParams};
 pub async fn get_pods(
     client: Client,
     namespace: Option<String>,
+    selectors: Vec<String>,
 ) -> anyhow::Result<ObjectList<Pod>> {
     let pods: Api<Pod> = match namespace {
         Some(ns) => Api::namespaced(client, ns.as_str()),
@@ -15,6 +16,35 @@ pub async fn get_pods(
     };
 
     let pod_list = pods.list(&Default::default()).await?;
+
+    let pod_list: ObjectList<Pod> = if selectors.is_empty() {
+        pod_list
+    } else {
+        let metadata = pod_list.metadata.clone();
+        let types = pod_list.types.clone();
+        let items = pod_list
+            .into_iter()
+            .filter(|pod| {
+                let Some(labels) = &pod.metadata.labels else {
+                    return false;
+                };
+                // OR across groups; AND within each comma-separated group
+                selectors.iter().any(|group| {
+                    group.split(',').all(|s| {
+                        let mut parts = s.splitn(2, '=');
+                        let key = parts.next().unwrap_or("");
+                        let value = parts.next().unwrap_or("");
+                        labels.get(key).map(|v| v == value).unwrap_or(false)
+                    })
+                })
+            })
+            .collect();
+        ObjectList {
+            metadata,
+            items,
+            types,
+        }
+    };
 
     Ok(pod_list)
 }

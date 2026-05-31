@@ -11,4 +11,7 @@ pub struct Cli {
     /// Namespace to query for pods and metrics (default: all namespaces)
     #[arg(short, long)]
     pub namespace: Option<String>,
+    /// Label selector to filter pods (e.g., "app=nginx,tier=web"); repeat for OR logic
+    #[arg(short, long)]
+    pub selector: Vec<String>,
 }

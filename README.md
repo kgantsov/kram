@@ -15,6 +15,7 @@ kram [OPTIONS]
 
 Options:
   -n, --namespace <NAMESPACE>  Namespace to query (default: all namespaces)
+  -s, --selector <SELECTOR>    Label selector (repeatable; see below)
   -h, --help                   Print help
   -V, --version                Print version
 ```
@@ -27,7 +28,27 @@ kram
 
 # Single namespace
 kram -n production
+
+# Filter by label (AND within a selector)
+kram --selector app=nginx,tier=web
+
+# Filter by multiple labels with OR logic (repeat --selector)
+kram --selector app=nginx --selector app=redis
+
+# Combined: (app=nginx AND tier=web) OR (app=redis)
+kram --selector app=nginx,tier=web --selector app=redis
 ```
+
+### Label selectors
+
+`--selector` accepts comma-separated `key=value` pairs that must **all** match (AND). Repeating `--selector` adds an OR group — a pod matches if it satisfies **any** of the selector groups.
+
+| Example | Meaning |
+|---|---|
+| `--selector app=nginx` | `app=nginx` |
+| `--selector app=nginx,tier=web` | `app=nginx` AND `tier=web` |
+| `--selector app=nginx --selector app=redis` | `app=nginx` OR `app=redis` |
+| `--selector app=nginx,tier=web --selector app=redis` | (`app=nginx` AND `tier=web`) OR `app=redis` |
 
 ### Output
 
