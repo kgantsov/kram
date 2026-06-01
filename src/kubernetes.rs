@@ -97,15 +97,14 @@ pub fn resolve_pod_owner(pod: &Pod, rs_map: &HashMap<String, &ReplicaSet>) -> St
         match oref.kind.as_str() {
             "ReplicaSet" => {
                 let key = format!("{pod_ns}/{}", oref.name);
-                if let Some(rs) = rs_map.get(&key) {
-                    if let Some(d) = rs
+                if let Some(rs) = rs_map.get(&key)
+                    && let Some(d) = rs
                         .metadata
                         .owner_references
                         .as_ref()
                         .and_then(|refs| refs.iter().find(|r| r.kind == "Deployment"))
-                    {
-                        return format!("deployment/{}", d.name);
-                    }
+                {
+                    return format!("deployment/{}", d.name);
                 }
             }
             "StatefulSet" => return format!("statefulset/{}", oref.name),
