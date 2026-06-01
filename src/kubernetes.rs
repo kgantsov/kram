@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use k8s_openapi::api::apps::v1::ReplicaSet;
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::ObjectList;
@@ -70,37 +72,50 @@ pub async fn get_metrics(
     Ok(metrics)
 }
 
-pub async fn resolve_pod_owner(client: Client, pod: &Pod) -> anyhow::Result<String> {
-    let refs = pod
-        .metadata
-        .owner_references
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("Pod has no owner references"))?;
+pub async fn get_replicasets(
+    client: Client,
+    namespace: Option<String>,
+) -> anyhow::Result<ObjectList<ReplicaSet>> {
+    let api: Api<ReplicaSet> = match namespace {
+        Some(ns) => Api::namespaced(client, ns.as_str()),
+        None => Api::all(client),
+    };
+    Ok(api.list(&ListParams::default()).await?)
+}
+
+pub fn resolve_pod_owner(pod: &Pod, rs_map: &HashMap<String, &ReplicaSet>) -> String {
+    let Some(refs) = pod.metadata.owner_references.as_ref() else {
+        return format!(
+            "standalone/{}",
+            pod.metadata.name.as_deref().unwrap_or("unknown")
+        );
+    };
 
     let pod_ns = pod.metadata.namespace.as_deref().unwrap_or("default");
-    let rs_api: Api<ReplicaSet> = Api::namespaced(client.clone(), pod_ns);
 
     for oref in refs {
         match oref.kind.as_str() {
             "ReplicaSet" => {
-                let rs = rs_api.get(&oref.name).await?;
-                if let Some(d) = rs
-                    .metadata
-                    .owner_references
-                    .as_ref()
-                    .and_then(|refs| refs.iter().find(|r| r.kind == "Deployment"))
-                {
-                    return Ok(format!("deployment/{}", d.name));
+                let key = format!("{pod_ns}/{}", oref.name);
+                if let Some(rs) = rs_map.get(&key) {
+                    if let Some(d) = rs
+                        .metadata
+                        .owner_references
+                        .as_ref()
+                        .and_then(|refs| refs.iter().find(|r| r.kind == "Deployment"))
+                    {
+                        return format!("deployment/{}", d.name);
+                    }
                 }
             }
-            "StatefulSet" => return Ok(format!("statefulset/{}", oref.name)),
-            "DaemonSet" => return Ok(format!("daemonset/{}", oref.name)),
-            "Job" => return Ok(format!("job/{}", oref.name)),
+            "StatefulSet" => return format!("statefulset/{}", oref.name),
+            "DaemonSet" => return format!("daemonset/{}", oref.name),
+            "Job" => return format!("job/{}", oref.name),
             _ => {}
         }
     }
-    Ok(format!(
+    format!(
         "standalone/{}",
         pod.metadata.name.as_deref().unwrap_or("unknown")
-    ))
+    )
 }

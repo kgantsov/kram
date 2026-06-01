@@ -1,8 +1,9 @@
 use comfy_table::Table;
+use k8s_openapi::api::apps::v1::ReplicaSet;
 use std::collections::HashMap;
 
 use crate::command::{SortBy, SortOrder};
-use crate::kubernetes::{get_metrics, get_pods, resolve_pod_owner};
+use crate::kubernetes::{get_metrics, get_pods, get_replicasets, resolve_pod_owner};
 use crate::metrics::{
     PodMetrics, Statistics, calculate_stats, memory_bytes_to_human, parse_memory_bytes,
 };
@@ -15,15 +16,26 @@ pub async fn run(
     sort_by: SortBy,
 ) -> anyhow::Result<()> {
     let client = Client::try_default().await?;
-    let pods = get_pods(client.clone(), namespace.clone(), selector).await?;
+    let (pods, replicasets, metrics_list) = tokio::try_join!(
+        get_pods(client.clone(), namespace.clone(), selector),
+        get_replicasets(client.clone(), namespace.clone()),
+        get_metrics(client.clone(), namespace),
+    )?;
+
+    let rs_map: HashMap<String, &ReplicaSet> = replicasets
+        .iter()
+        .filter_map(|rs| {
+            let ns = rs.metadata.namespace.as_deref().unwrap_or("default");
+            let name = rs.metadata.name.as_deref()?;
+            Some((format!("{ns}/{name}"), rs))
+        })
+        .collect();
 
     let mut owner_map: HashMap<String, String> = HashMap::new();
-
     for pod in &pods {
-        let owner = resolve_pod_owner(client.clone(), pod).await?;
+        let owner = resolve_pod_owner(pod, &rs_map);
         owner_map.insert(pod.metadata.name.clone().unwrap_or_default(), owner);
     }
-    let metrics_list = get_metrics(client.clone(), namespace).await?;
     let mut owner_metrics: HashMap<String, Vec<u64>> = HashMap::new();
 
     for metric in &metrics_list {
