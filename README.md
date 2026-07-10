@@ -6,9 +6,9 @@ An interactive Kubernetes resource-usage TUI. Queries pod metrics and shows aggr
 
 ## Requirements
 
-- Rust (edition 2024)
 - A Kubernetes cluster reachable via `~/.kube/config` or `KUBECONFIG`
 - [metrics-server](https://github.com/kubernetes-sigs/metrics-server) running in the cluster
+- Rust (edition 2024) — only if you build from source (see [Build](#build))
 
 ## Installation
 
