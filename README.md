@@ -82,6 +82,7 @@ The cluster is queried once on startup; all interaction below is instant and nev
 | Key | Action |
 |---|---|
 | `↑` / `↓` or `k` / `j` | Move the row selection |
+| `PgUp` / `PgDn` | Move the selection up / down one page |
 | `g` / `G` | Jump to the first / last row |
 | `←` / `→` or `h` / `l` | Move the active sort column |
 | `s` / `Space` / `Enter` | Toggle ascending / descending |

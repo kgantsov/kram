@@ -25,6 +25,9 @@ pub struct App {
     pub input_mode: InputMode,
     pub data: TableData,
     pub table_state: TableState,
+    /// Number of data rows visible in the table body, updated on each render so
+    /// that PageUp/PageDown jump by exactly one screenful.
+    page_size: usize,
 }
 
 impl App {
@@ -47,6 +50,7 @@ impl App {
             input_mode: InputMode::Normal,
             data,
             table_state,
+            page_size: 1,
         }
     }
 
@@ -143,5 +147,20 @@ impl App {
 
     pub fn select_last(&mut self) {
         self.table_state.select_last();
+    }
+
+    /// Record the visible body height so page navigation matches the viewport.
+    pub fn set_page_size(&mut self, rows: usize) {
+        self.page_size = rows.max(1);
+    }
+
+    /// Move the selection down by one screenful.
+    pub fn page_down(&mut self) {
+        self.table_state.scroll_down_by(self.page_size as u16);
+    }
+
+    /// Move the selection up by one screenful.
+    pub fn page_up(&mut self) {
+        self.table_state.scroll_up_by(self.page_size as u16);
     }
 }

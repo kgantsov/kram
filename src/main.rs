@@ -52,6 +52,8 @@ async fn main() -> color_eyre::Result<()> {
                 KeyCode::Char('/') => app.start_filter(),
                 KeyCode::Char('j') | KeyCode::Down => app.select_next(),
                 KeyCode::Char('k') | KeyCode::Up => app.select_previous(),
+                KeyCode::PageDown => app.page_down(),
+                KeyCode::PageUp => app.page_up(),
                 KeyCode::Char('g') => app.select_first(),
                 KeyCode::Char('G') => app.select_last(),
                 // Move the sort column and re-sort immediately.

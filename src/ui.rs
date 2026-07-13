@@ -64,6 +64,8 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         Span::from(" mem/cpu   "),
         Span::from(" / ").fg(Color::Black).bg(ACCENT),
         Span::from(" filter   "),
+        Span::from(" PgUp/PgDn ").fg(Color::Black).bg(ACCENT),
+        Span::from(" page   "),
         Span::from(" g/G ").fg(Color::Black).bg(ACCENT),
         Span::from(" top/bottom   "),
         Span::from(" q ").fg(Color::Black).bg(ACCENT),
@@ -116,6 +118,11 @@ fn data_row(index: usize, row: &StatsRow, metric: Metric) -> Row<'static> {
 
 /// Render the statistics table from the current `App` state.
 pub fn render_table(frame: &mut Frame, area: Rect, app: &mut App) {
+    // Body height = area minus top/bottom borders, the header row, and the
+    // footer (its blank top margin plus the Summary row). Keep this in sync with
+    // page navigation so PageUp/PageDown move by one visible screenful.
+    app.set_page_size(area.height.saturating_sub(5) as usize);
+
     let metric = app.metric;
     let sort_col = app.sort_col;
     let arrow = if app.sort_desc { " ▼" } else { " ▲" };
