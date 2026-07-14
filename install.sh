@@ -32,7 +32,7 @@ esac
 
 case "$OS" in
     Darwin) TARGET="kram-${ARCH}-apple-darwin" ;;
-    Linux) TARGET="kram-${ARCH}-unknown-linux-gnu" ;;
+    Linux) TARGET="kram-${ARCH}-unknown-linux-musl" ;;
     *)
         echo "Unsupported operating system: $OS"
         exit 1
