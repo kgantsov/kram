@@ -192,7 +192,7 @@ pub fn render_table(frame: &mut Frame, area: Rect, app: &mut App) {
     let mut block = Block::bordered()
         .border_type(BorderType::Rounded)
         .border_style(Style::new().fg(ACCENT))
-        .title(Line::from(format!(" {} ", metric.title()).bold()).centered())
+        .title(Line::from(format!(" {} ({}) ", metric.title(), app.context()).bold()).centered())
         .title_bottom(Line::from(format!(" {} workloads ", app.data.rows.len())).right_aligned());
 
     // Show the active filter on the bottom-left so it stays visible after the

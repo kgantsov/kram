@@ -26,6 +26,7 @@ pub struct App {
     pub data: TableData,
     pub table_state: TableState,
     confirm_quit: bool,
+    context: String,
     /// Number of data rows visible in the table body, updated on each render so
     /// that PageUp/PageDown jump by exactly one screenful.
     page_size: usize,
@@ -34,6 +35,7 @@ pub struct App {
 impl App {
     /// Build the initial view from raw samples and select the first row.
     pub fn new(
+        context: String,
         samples: Vec<ResourceSamples>,
         metric: Metric,
         sort_col: usize,
@@ -43,6 +45,7 @@ impl App {
         let mut table_state = TableState::default();
         table_state.select_first();
         Self {
+            context,
             samples,
             metric,
             sort_col,
@@ -172,5 +175,9 @@ impl App {
 
     pub fn confirm_quit(&self) -> bool {
         self.confirm_quit
+    }
+
+    pub fn context(&self) -> &str {
+        &self.context
     }
 }

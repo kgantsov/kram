@@ -4,6 +4,7 @@ use kram::app::App;
 use kram::command::{Cli, SortOrder};
 use kram::run::{collect_raw, sort_by_to_column};
 use kram::ui::render;
+use kube::config::Kubeconfig;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
@@ -17,7 +18,18 @@ async fn main() -> color_eyre::Result<()> {
         .await
         .map_err(|e| color_eyre::eyre::eyre!("{e:#}"))?;
 
-    let mut app = App::new(samples, kram::metrics::Metric::Memory, sort_col, sort_desc);
+    let kubeconfig = Kubeconfig::read()?;
+    let current_context = kubeconfig
+        .current_context
+        .unwrap_or(String::from("unknown"));
+
+    let mut app = App::new(
+        current_context,
+        samples,
+        kram::metrics::Metric::Memory,
+        sort_col,
+        sort_desc,
+    );
 
     ratatui::run(|terminal| {
         loop {
