@@ -25,6 +25,7 @@ pub struct App {
     pub input_mode: InputMode,
     pub data: TableData,
     pub table_state: TableState,
+    confirm_quit: bool,
     /// Number of data rows visible in the table body, updated on each render so
     /// that PageUp/PageDown jump by exactly one screenful.
     page_size: usize,
@@ -50,6 +51,7 @@ impl App {
             input_mode: InputMode::Normal,
             data,
             table_state,
+            confirm_quit: false,
             page_size: 1,
         }
     }
@@ -162,5 +164,13 @@ impl App {
     /// Move the selection up by one screenful.
     pub fn page_up(&mut self) {
         self.table_state.scroll_up_by(self.page_size as u16);
+    }
+
+    pub fn set_confirm_quit(&mut self, confirm: bool) {
+        self.confirm_quit = confirm;
+    }
+
+    pub fn confirm_quit(&self) -> bool {
+        self.confirm_quit
     }
 }

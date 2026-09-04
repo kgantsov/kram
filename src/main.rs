@@ -38,14 +38,21 @@ async fn main() -> color_eyre::Result<()> {
                 continue;
             }
 
+            if app.confirm_quit() {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => return Ok(()),
+                    KeyCode::Char('n') | KeyCode::Char('N') => app.set_confirm_quit(false),
+                    _ => {}
+                }
+                continue;
+            }
+
             match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                // Esc clears an active filter first, and only quits otherwise.
+                KeyCode::Char('q') => app.set_confirm_quit(true),
+                // Esc clears an active filter.
                 KeyCode::Esc => {
                     if app.has_filter() {
                         app.clear_filter();
-                    } else {
-                        return Ok(());
                     }
                 }
                 // Open the filter prompt.

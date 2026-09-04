@@ -1,8 +1,10 @@
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{Block, BorderType, Cell, HighlightSpacing, Row, Table};
+use ratatui::widgets::{
+    Block, BorderType, Borders, Cell, Clear, HighlightSpacing, Paragraph, Row, Table,
+};
 
 use crate::app::App;
 use crate::metrics::{Metric, Statistics};
@@ -39,6 +41,10 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     frame.render_widget(title, top);
 
     render_table(frame, main, app);
+
+    if app.confirm_quit() {
+        draw_quit_popup(frame);
+    }
 
     // While filtering, the footer becomes the query prompt; otherwise it lists
     // the key hints.
@@ -209,4 +215,48 @@ pub fn render_table(frame: &mut Frame, area: Rect, app: &mut App) {
         .highlight_symbol(Span::from(" ▍").fg(SELECT));
 
     frame.render_stateful_widget(table, area, &mut app.table_state);
+}
+
+/// Carve a `width` × `height` rectangle centered inside `area`, for popups.
+fn centered_rect(area: Rect, width: u16, height: u16) -> Rect {
+    let [row] = Layout::vertical([Constraint::Length(height)])
+        .flex(Flex::Center)
+        .areas(area);
+    let [cell] = Layout::horizontal([Constraint::Length(width)])
+        .flex(Flex::Center)
+        .areas(row);
+    cell
+}
+
+fn draw_quit_popup(frame: &mut ratatui::Frame) {
+    let area = centered_rect(frame.area(), 34, 5);
+    // Clear wipes the cells behind the popup so the list doesn't show
+    // through its interior.
+    frame.render_widget(Clear, area);
+
+    let body = Paragraph::new(vec![
+        Line::from("Quit kram?").centered(),
+        Line::from(vec![
+            Span::styled(
+                "Y",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("es    "),
+            Span::styled(
+                "N",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("o"),
+        ])
+        .centered(),
+    ])
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Confirm ")
+            .border_style(Style::default().fg(Color::Yellow)),
+    );
+    frame.render_widget(body, area);
 }
